@@ -15,6 +15,8 @@ From: dynverse/dynwrap:r
 
 %post
     chmod -R 755 '/code'
+    R -e 'devtools::install_cran("igraph")'
+    R -e 'devtools::install_cran("mclust")'
 
 %runscript
     exec Rscript /code/run.R
