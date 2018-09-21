@@ -2,7 +2,7 @@ id: mst
 docker_repository: dynverse/ti_mst
 singularity_collection: 1673
 container_url: https://github.com/dynverse/ti_mst
-name: Minimum Spanning Tree
+name: MST
 source: offtheshelf
 trajectory_types:
 - linear
