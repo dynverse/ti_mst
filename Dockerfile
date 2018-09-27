@@ -4,7 +4,7 @@ RUN R -e 'devtools::install_cran("igraph")'
 
 RUN R -e 'devtools::install_cran("mclust")'
 
-LABEL version 0.1.3
+LABEL version 0.1.4
 
 ADD . /code
 
