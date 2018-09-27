@@ -10,7 +10,6 @@ trajectory_types:
 - convergence
 - multifurcation
 - tree
-- acyclic_graph
 topology_inference: free
 platform: R
 parameters:
