@@ -1,3 +1,7 @@
+#!/usr/local/bin/Rscript
+
+task <- dyncli::main()
+
 library(jsonlite)
 library(readr)
 library(dplyr)
@@ -10,13 +14,12 @@ requireNamespace("igraph")
 #   ____________________________________________________________________________
 #   Load data                                                               ####
 
-data <- read_rds("/ti/input/data.rds")
-params <- jsonlite::read_json("/ti/input/params.json")
+expression <- task$expression
+params <- task$params
 
 #   ____________________________________________________________________________
 #   Infer trajectory                                                        ####
 
-expression <- data$expression
 
 # TIMING: done with preproc
 checkpoints <- list(method_afterpreproc = as.numeric(Sys.time()))
@@ -36,16 +39,16 @@ rownames(centers) <- milestone_ids
 dis <- as.matrix(dist(centers))
 rownames(dis) <- colnames(dis) <- milestone_ids
 
-disdf <- dis %>% 
-  reshape2::melt(varnames = c("from", "to"), value.name = "weight") %>% 
+disdf <- dis %>%
+  reshape2::melt(varnames = c("from", "to"), value.name = "weight") %>%
   na.omit()
 
 # calculate mst
 gr <- igraph::graph_from_data_frame(disdf, directed = FALSE, vertices = milestone_ids)
 mst <- igraph::minimum.spanning.tree(gr, weights = igraph::E(gr)$weight)
 
-milestone_network <- 
-  igraph::as_data_frame(mst) %>% 
+milestone_network <-
+  igraph::as_data_frame(mst) %>%
   transmute(from, to, length = weight, directed = FALSE)
 
 # TIMING: done with method
@@ -64,4 +67,13 @@ output <- lst(
 #   ____________________________________________________________________________
 #   Save output                                                             ####
 
-write_rds(output, "/ti/output/output.rds")
+output <- dynwrap::wrap_data(cell_ids = rownames(expression)) %>%
+  dynwrap::add_dimred_projection(
+    milestone_ids = milestone_ids,
+    milestone_network = milestone_network,
+    dimred = space,
+    dimred_milestones = centers
+  ) %>%
+  dynwrap::add_timings(checkpoints)
+
+dyncli::write_output(output, task$output)
