@@ -15,7 +15,7 @@ requireNamespace("igraph")
 #   Load data                                                               ####
 
 expression <- task$expression
-params <- task$params
+parameters <- task$parameters
 
 #   ____________________________________________________________________________
 #   Infer trajectory                                                        ####
@@ -25,7 +25,7 @@ params <- task$params
 checkpoints <- list(method_afterpreproc = as.numeric(Sys.time()))
 
 # infer dimred
-space <- dyndimred::dimred(expression, method = params$dimred, ndim = params$ndim)
+space <- dyndimred::dimred(expression, method = parameters$dimred, ndim = parameters$ndim)
 
 # cluster cells
 clust <- mclust::Mclust(space, modelNames = "EEV", G = 5:15)
