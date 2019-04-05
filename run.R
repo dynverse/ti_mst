@@ -1,28 +1,29 @@
-library(jsonlite)
-library(readr)
-library(dplyr)
-library(purrr)
+#!/usr/local/bin/Rscript
 
-library(dyndimred)
-library(mclust)
+task <- dyncli::main()
+
+library(dplyr, warn.conflicts = FALSE)
+library(purrr, warn.conflicts = FALSE)
+library(dynwrap, warn.conflicts = FALSE)
+library(dyndimred, warn.conflicts = FALSE)
+library(mclust, warn.conflicts = FALSE)
 requireNamespace("igraph")
 
 #   ____________________________________________________________________________
 #   Load data                                                               ####
 
-data <- read_rds("/ti/input/data.rds")
-params <- jsonlite::read_json("/ti/input/params.json")
+expression <- task$expression
+parameters <- task$parameters
 
 #   ____________________________________________________________________________
 #   Infer trajectory                                                        ####
 
-expression <- data$expression
 
 # TIMING: done with preproc
 checkpoints <- list(method_afterpreproc = as.numeric(Sys.time()))
 
 # infer dimred
-space <- dyndimred::dimred(expression, method = params$dimred, ndim = params$ndim)
+space <- dyndimred::dimred(expression, method = parameters$dimred, ndim = parameters$ndim)
 
 # cluster cells
 clust <- mclust::Mclust(space, modelNames = "EEV", G = 5:15)
@@ -36,16 +37,16 @@ rownames(centers) <- milestone_ids
 dis <- as.matrix(dist(centers))
 rownames(dis) <- colnames(dis) <- milestone_ids
 
-disdf <- dis %>% 
-  reshape2::melt(varnames = c("from", "to"), value.name = "weight") %>% 
+disdf <- dis %>%
+  reshape2::melt(varnames = c("from", "to"), value.name = "weight") %>%
   na.omit()
 
 # calculate mst
 gr <- igraph::graph_from_data_frame(disdf, directed = FALSE, vertices = milestone_ids)
 mst <- igraph::minimum.spanning.tree(gr, weights = igraph::E(gr)$weight)
 
-milestone_network <- 
-  igraph::as_data_frame(mst) %>% 
+milestone_network <-
+  igraph::as_data_frame(mst) %>%
   transmute(from, to, length = weight, directed = FALSE)
 
 # TIMING: done with method
@@ -64,4 +65,13 @@ output <- lst(
 #   ____________________________________________________________________________
 #   Save output                                                             ####
 
-write_rds(output, "/ti/output/output.rds")
+output <- dynwrap::wrap_data(cell_ids = rownames(expression)) %>%
+  dynwrap::add_dimred_projection(
+    milestone_ids = milestone_ids,
+    milestone_network = milestone_network,
+    dimred = space,
+    dimred_milestones = centers
+  ) %>%
+  dynwrap::add_timings(checkpoints)
+
+dyncli::write_output(output, task$output)

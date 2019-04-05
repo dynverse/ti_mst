@@ -1,20 +1,27 @@
-id: mst
-docker_repository: dynverse/ti_mst
-singularity_collection: 1673
-container_url: https://github.com/dynverse/ti_mst
-name: MST
-source: offtheshelf
-trajectory_types:
-- linear
-- bifurcation
-- convergence
-- multifurcation
-- tree
-topology_inference: free
-platform: R
+method:
+  id: mst
+  name: MST
+  source: offtheshelf
+  platform: R
+
+container:
+  url: https://github.com/dynverse/ti_mst
+  docker: dynverse/ti_mst
+
+wrapper:
+  type: dimred_projection
+  topology_inference: free
+  trajectory_types:
+  - linear
+  - bifurcation
+  - convergence
+  - multifurcation
+  - tree
+  input_required: expression
+
 parameters:
-  dimred:
-    type: discrete
+  - id: dimred
+    type: character
     default: pca
     values:
     - pca
@@ -29,17 +36,10 @@ parameters:
     - umap
     - dm_diffusionMap
     description: Which dimensionality reduction method to use.
-  ndim:
+  - id: ndim
     type: integer
     default: 2
-    lower: 2
-    upper: 30
-input:
-  format: rds
-  required: expression
-output:
-  format: rds
-  outputs:
-  - dimred_projection
-  - timings
-wrapper_type: dimred_projection
+    distribution:
+      type: uniform
+      lower: 2
+      upper: 30
